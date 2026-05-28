@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "726261566096",
+    "project_id": "kronos-23539",
+    "storage_bucket": "kronos-23539.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:726261566096:android:cf2104a393ca8967f86615",
+        "android_client_info": {
+          "package_name": "com.agnda.kronos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZeehVkIwnV9F-8P1jrf2hnpARVuZwGd4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
