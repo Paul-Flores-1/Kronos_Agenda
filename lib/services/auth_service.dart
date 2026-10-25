@@ -222,7 +222,7 @@ class AuthService {
     await _auth.signOut();
   }
 
-  // --- 4. CUMPLEANOS AUTOMATICO Y CICLICO ---
+  // --- 4. CUMPLEAÑOS AUTOMATICO Y CICLICO ---
   Future<void> _createBirthdayEvent(String userId, String userName, DateTime birthDate) async {
     DateTime now = DateTime.now();
     DateTime nextBirthday = DateTime(now.year, birthDate.month, birthDate.day);
@@ -232,16 +232,16 @@ class AuthService {
     }
 
     final docRef = _firestore.collection('users').doc(userId).collection('eventos');
-    final existing = await docRef.where('titulo', isEqualTo: 'Cumpleanos de $userName').get();
+    final existing = await docRef.where('titulo', isEqualTo: 'Cumpleaños de $userName').get();
 
     if (existing.docs.isEmpty) {
       await docRef.add({
         'idUsuario': userId,
-        'titulo': 'Cumpleanos de $userName',
-        'descripcion': 'Dia especial Celebracion de cumpleanos.',
+        'titulo': 'Cumpleaños de $userName',
+        'descripcion': 'Dia especial Celebracion de cumpleaños.',
         'fechaInicio': Timestamp.fromDate(nextBirthday),
         'fechaFin': Timestamp.fromDate(nextBirthday.add(const Duration(hours: 23, minutes: 59))),
-        'tipo': 'cumpleanos', 
+        'tipo': 'cumpleaños', 
         'todoElDia': true,
         'eliminado': false,
       });
@@ -249,7 +249,7 @@ class AuthService {
       await docRef.doc(existing.docs.first.id).update({
         'fechaInicio': Timestamp.fromDate(nextBirthday),
         'fechaFin': Timestamp.fromDate(nextBirthday.add(const Duration(hours: 23, minutes: 59))),
-        'tipo': 'cumpleanos',
+        'tipo': 'cumpleaños',
       });
     }
 
@@ -259,8 +259,8 @@ class AuthService {
     if (horaNotificacion.isAfter(DateTime.now())) {
       await NotificationService.programarNotificacion(
         id: nextBirthday.millisecondsSinceEpoch ~/ 1000, 
-        titulo: 'Feliz Cumpleanos', 
-        cuerpo: 'Hoy es el cumpleanos de $userName. A celebrar', 
+        titulo: 'Feliz Cumpleaños', 
+        cuerpo: 'Hoy es el cumpleaños de $userName. A celebrar', 
         fecha: horaNotificacion
       );
     }

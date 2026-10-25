@@ -116,7 +116,7 @@ class _AddEventScreenState extends State<AddEventScreen> with SingleTickerProvid
       case 'especial': return const Color(0xFFA78BFA);
       case 'cotidiano': return const Color(0xFF60A5FA);
       case 'recordatorio': return const Color(0xFFFB923C);
-      case 'cumpleanos': return const Color(0xFFF472B6);
+      case 'cumpleaños': return const Color(0xFFF472B6);
       default: return Colors.grey;
     }
   }
@@ -200,7 +200,7 @@ class _AddEventScreenState extends State<AddEventScreen> with SingleTickerProvid
                                     _buildTypeSelector('especial', Icons.people_alt_rounded, "Social"),
                                     _buildTypeSelector('cotidiano', Icons.work_outline_rounded, "Casual"),
                                     _buildTypeSelector('recordatorio', Icons.notifications_active_rounded, "Aviso"),
-                                    _buildTypeSelector('cumpleanos', Icons.cake_rounded, "Cumple"),
+                                    _buildTypeSelector('cumpleaños', Icons.cake_rounded, "Cumple"),
                                   ],
                                 ),
                               ),

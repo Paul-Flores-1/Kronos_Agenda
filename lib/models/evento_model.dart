@@ -85,7 +85,7 @@ class Evento {
         case 'recordatorio': tipoFinal = TipoEvento.recordatorio; break;
         case 'especial': tipoFinal = TipoEvento.especial; break;
         case 'muyEspecial': tipoFinal = TipoEvento.muyEspecial; break;
-        case 'cumpleanos': tipoFinal = TipoEvento.cumpleanos; break;
+        case 'cumpleaños': tipoFinal = TipoEvento.cumpleanos; break;
         case 'festivo': tipoFinal = TipoEvento.festivo; break;
         default: tipoFinal = TipoEvento.cotidiano;
       }

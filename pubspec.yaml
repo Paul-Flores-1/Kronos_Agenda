@@ -1,7 +1,7 @@
 name: kronos
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+3
 
 environment:
   sdk: ^3.0.0
@@ -30,6 +30,7 @@ dependencies:
   huawei_account: ^6.14.0+300
   connectivity_plus: ^6.1.0
   flutter_native_splash: ^2.4.1
+  flutter_timezone: ^5.1.1
 
 dev_dependencies:
   flutter_test:
