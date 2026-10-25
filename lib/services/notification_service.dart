@@ -27,14 +27,14 @@ class NotificationService {
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         if (kDebugMode) {
-          print(' Notificación recibida: ${response.payload}');
+          debugPrint('Notificación recibida: ${response.payload}');
         }
       },
     );
 
     _initialized = true;
     if (kDebugMode) {
-      print(' NotificationService inicializado');
+      debugPrint('NotificationService inicializado');
     }
 
     await solicitarPermisos();
@@ -43,31 +43,31 @@ class NotificationService {
   static Future<bool> solicitarPermisos() async {
     if (await Permission.notification.isDenied) {
       if (kDebugMode) {
-        print(' Solicitando permisos de notificación...');
+        debugPrint('Solicitando permisos de notificación...');
       }
       final status = await Permission.notification.request();
       
       if (status.isGranted) {
         if (kDebugMode) {
-          print(' Permisos de notificación concedidos');
+          debugPrint('Permisos de notificación concedidos');
         }
         return true;
       } else if (status.isPermanentlyDenied) {
         if (kDebugMode) {
-          print(' Permisos permanentemente denegados.');
+          debugPrint('Permisos permanentemente denegados.');
         }
         await openAppSettings();
         return false;
       } else {
         if (kDebugMode) {
-          print(' Permisos de notificación denegados');
+          debugPrint('Permisos de notificación denegados');
         }
         return false;
       }
     }
     
     if (kDebugMode) {
-      print(' Permisos ya concedidos');
+      debugPrint('Permisos ya concedidos');
     }
     return true;
   }
@@ -82,8 +82,8 @@ class NotificationService {
     
     if (fecha.isBefore(ahora)) {
       if (kDebugMode) {
-        print(' Fecha en el pasado: $fecha (ahora: $ahora)');
-        print('   Diferencia: ${ahora.difference(fecha).inMinutes} minutos');
+        debugPrint('Fecha en el pasado: $fecha (ahora: $ahora)');
+        debugPrint('Diferencia: ${ahora.difference(fecha).inMinutes} minutos');
       }
       return;
     }
@@ -91,7 +91,7 @@ class NotificationService {
     final tienePermisos = await solicitarPermisos();
     if (!tienePermisos) {
       if (kDebugMode) {
-        print('No hay permisos para notificaciones');
+        debugPrint('No hay permisos para notificaciones');
       }
       return;
     }
@@ -100,12 +100,12 @@ class NotificationService {
       final tzFecha = tz.TZDateTime.from(fecha, tz.local);
       
       if (kDebugMode) {
-        print(' Programando notificación:');
-        print('   ID: $id');
-        print('   Título: $titulo');
-        print('   Fecha local: $fecha');
-        print('   Fecha TZ: $tzFecha');
-        print('   En ${fecha.difference(ahora).inMinutes} minutos');
+        debugPrint('Programando notificación:');
+        debugPrint('  ID: $id');
+        debugPrint('  Título: $titulo');
+        debugPrint('  Fecha local: $fecha');
+        debugPrint('  Fecha TZ: $tzFecha');
+        debugPrint('  En ${fecha.difference(ahora).inMinutes} minutos');
       }
 
       await _notificationsPlugin.zonedSchedule(
@@ -128,15 +128,16 @@ class NotificationService {
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        // REMOVIDO EL PARÁMETRO QUE CAUSABA ERROR
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
       
       if (kDebugMode) {
-        print('Notificación programada exitosamente');
+        debugPrint('Notificación programada exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error al programar notificación: $e');
+        debugPrint('Error al programar notificación: $e');
       }
     }
   }
@@ -159,30 +160,30 @@ class NotificationService {
 
     await _notificationsPlugin.show(id, titulo, cuerpo, details);
     if (kDebugMode) {
-      print('Notificación inmediata mostrada');
+      debugPrint('Notificación inmediata mostrada');
     }
   }
 
   static Future<void> cancelarNotificacion(int id) async {
     await _notificationsPlugin.cancel(id);
     if (kDebugMode) {
-      print('Notificación $id cancelada');
+      debugPrint('Notificación $id cancelada');
     }
   }
 
   static Future<void> cancelarTodas() async {
     await _notificationsPlugin.cancelAll();
     if (kDebugMode) {
-      print('Todas las notificaciones canceladas');
+      debugPrint('Todas las notificaciones canceladas');
     }
   }
 
   static Future<void> verNotificacionesPendientes() async {
     final pendientes = await _notificationsPlugin.pendingNotificationRequests();
     if (kDebugMode) {
-      print('Notificaciones pendientes: ${pendientes.length}');
+      debugPrint('Notificaciones pendientes: ${pendientes.length}');
       for (var notif in pendientes) {
-        print('   - ID ${notif.id}: ${notif.title}');
+        debugPrint('   - ID ${notif.id}: ${notif.title}');
       }
     }
   }

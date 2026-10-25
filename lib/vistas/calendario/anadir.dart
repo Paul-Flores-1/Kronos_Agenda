@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../services/auth_service.dart';
-import '../models/evento_model.dart';
+import '../../services/auth_service.dart';
+import '../../models/evento_model.dart';
 import 'package:kronos/services/notification_service.dart';
 
 class AddEventScreen extends StatefulWidget {
@@ -13,7 +13,7 @@ class AddEventScreen extends StatefulWidget {
   State<AddEventScreen> createState() => _AddEventScreenState();
 }
 
-class _AddEventScreenState extends State<AddEventScreen> {
+class _AddEventScreenState extends State<AddEventScreen> with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   late TextEditingController _titleController;
   late TextEditingController _descController;
@@ -31,9 +31,34 @@ class _AddEventScreenState extends State<AddEventScreen> {
   bool get _isEditing => widget.eventoParaEditar != null;
   bool get _isReminderType => _selectedType == 'recordatorio';
 
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _scaleAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    _animationController = AnimationController(
+      vsync: this, 
+      duration: const Duration(milliseconds: 600),
+      reverseDuration: const Duration(milliseconds: 400),
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut, reverseCurve: Curves.easeOut)
+    );
+    
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutQuart, reverseCurve: Curves.easeIn)
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutQuad, reverseCurve: Curves.easeInBack)
+    );
+
+    _animationController.forward();
 
     if (_isEditing) {
       final e = widget.eventoParaEditar!;
@@ -57,28 +82,30 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
   @override
   void dispose() {
+    _animationController.dispose();
     _titleController.dispose();
     _descController.dispose();
     super.dispose();
   }
 
+  void _closeScreen() {
+    if (_animationController.status == AnimationStatus.reverse || 
+        _animationController.status == AnimationStatus.dismissed) {
+      return;
+    }
+    _animationController.reverse().then((_) {
+      if (mounted) Navigator.pop(context);
+    });
+  }
+
   Map<String, int> get _reminderOptions {
     if (_isReminderType) {
       return {
-        "1 hora antes": 60,
-        "2 horas antes": 120,
-        "3 horas antes": 180,
-        "4 horas antes": 240,
-        "5 horas antes": 300,
+        "1 hora antes": 60, "2 horas antes": 120, "3 horas antes": 180, "4 horas antes": 240, "5 horas antes": 300,
       };
     } else {
       return {
-        "1 hora antes": 60,
-        "2 horas antes": 120,
-        "un día antes": 1440,
-        "una semana antes": 10080,
-        "2 semanas antes": 20160,
-        "un mes antes": 43200,
+        "1 hora antes": 60, "2 horas antes": 120, "un día antes": 1440, "una semana antes": 10080, "2 semanas antes": 20160, "un mes antes": 43200,
       };
     }
   }
@@ -98,130 +125,141 @@ class _AddEventScreenState extends State<AddEventScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // CABECERA
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(76),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white.withAlpha(50), width: 1),
+    return WillPopScope(
+      onWillPop: () async {
+        _closeScreen();
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: _closeScreen,
+                      child: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha(76),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withAlpha(50), width: 1),
+                        ),
+                        child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: theme.textTheme.bodyLarge?.color),
                       ),
-                      child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: theme.textTheme.bodyLarge?.color),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    _isEditing ? 'Editar Evento' : 'Nuevo Evento',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: theme.textTheme.titleLarge?.color, letterSpacing: -0.3),
-                  ),
-                ],
-              ),
-            ),
-
-            // FORMULARIO
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                decoration: BoxDecoration(
-                  color: theme.cardTheme.color,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [BoxShadow(color: Colors.black.withAlpha(18), blurRadius: 16, offset: const Offset(0, 6))],
+                    const SizedBox(width: 16),
+                    Text(
+                      _isEditing ? 'Editar Evento' : 'Nuevo Evento',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: theme.textTheme.titleLarge?.color, letterSpacing: -0.3),
+                    ),
+                  ],
                 ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel("Título"),
-                      _buildTextField(
-                        controller: _titleController,
-                        hint: "Ej: Cita con el doctor",
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
-                      ),
-                      const SizedBox(height: 22),
-
-                      // TIPO DE EVENTO (CENTRADO CORREGIDO)
-                      _buildLabel("Tipo de evento"),
-                      Container(
+              ),
+      
+              Expanded(
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Container(
                         width: double.infinity,
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Distribución centrada
-                          children: [
-                            _buildTypeSelector('muyEspecial', Icons.star_rounded, "Especial"),
-                            _buildTypeSelector('especial', Icons.people_alt_rounded, "Social"),
-                            _buildTypeSelector('cotidiano', Icons.work_outline_rounded, "Casual"),
-                            _buildTypeSelector('recordatorio', Icons.notifications_active_rounded, "Aviso"),
-                            _buildTypeSelector('cumpleanos', Icons.cake_rounded, "Cumple"),
-                          ],
+                        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                        decoration: BoxDecoration(
+                          color: theme.cardTheme.color,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [BoxShadow(color: Colors.black.withAlpha(18), blurRadius: 16, offset: const Offset(0, 6))],
+                        ),
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel("Título"),
+                              _buildTextField(
+                                controller: _titleController,
+                                hint: "Ej: Cita con el doctor",
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+                              ),
+                              const SizedBox(height: 22),
+      
+                              _buildLabel("Tipo de evento"),
+                              Container(
+                                width: double.infinity,
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly, 
+                                  children: [
+                                    _buildTypeSelector('muyEspecial', Icons.star_rounded, "Especial"),
+                                    _buildTypeSelector('especial', Icons.people_alt_rounded, "Social"),
+                                    _buildTypeSelector('cotidiano', Icons.work_outline_rounded, "Casual"),
+                                    _buildTypeSelector('recordatorio', Icons.notifications_active_rounded, "Aviso"),
+                                    _buildTypeSelector('cumpleanos', Icons.cake_rounded, "Cumple"),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 22),
+      
+                              _buildLabel("Recordatorios"),
+                              Wrap(
+                                spacing: 8, runSpacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  ..._selectedReminders.map((mins) {
+                                    final label = _reminderOptions.entries.firstWhere((e) => e.value == mins, orElse: () => MapEntry("$mins min", mins)).key;
+                                    return _buildReminderChip(label, mins);
+                                  }),
+                                  _buildAddReminderButton(),
+                                ],
+                              ),
+                              const SizedBox(height: 22),
+      
+                              _buildLabel("Fecha"),
+                              _buildDatePicker(),
+                              const SizedBox(height: 16),
+      
+                              Row(
+                                children: [
+                                  Expanded(child: _buildTimePicker("Inicio", true)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _buildTimePicker("Fin", false)),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+      
+                              _buildToggleRow(),
+                              const SizedBox(height: 16),
+      
+                              _buildLabel("Descripción"),
+                              TextField(
+                                controller: _descController,
+                                maxLines: 3,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: _inputDecoration("Detalles adicionales..."),
+                              ),
+                              const SizedBox(height: 32),
+      
+                              _buildSaveButton(),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 22),
-
-                      _buildLabel("Recordatorios"),
-                      Wrap(
-                        spacing: 8, runSpacing: 8,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          ..._selectedReminders.map((mins) {
-                            final label = _reminderOptions.entries.firstWhere((e) => e.value == mins, orElse: () => MapEntry("$mins min", mins)).key;
-                            return _buildReminderChip(label, mins);
-                          }),
-                          _buildAddReminderButton(),
-                        ],
-                      ),
-                      const SizedBox(height: 22),
-
-                      _buildLabel("Fecha"),
-                      _buildDatePicker(),
-                      const SizedBox(height: 16),
-
-                      Row(
-                        children: [
-                          Expanded(child: _buildTimePicker("Inicio", true)),
-                          const SizedBox(width: 12),
-                          Expanded(child: _buildTimePicker("Fin", false)),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      _buildToggleRow(),
-                      const SizedBox(height: 16),
-
-                      _buildLabel("Descripción"),
-                      TextField(
-                        controller: _descController,
-                        maxLines: 3,
-                        style: const TextStyle(fontSize: 14),
-                        decoration: _inputDecoration("Detalles adicionales..."),
-                      ),
-                      const SizedBox(height: 32),
-
-                      _buildSaveButton(),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-
-  // --- WIDGETS AUXILIARES ---
 
   Widget _buildLabel(String text) {
     return Padding(
@@ -367,7 +405,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
   }
 
   void _showReminderPicker() {
-    // 1. Calculamos la fecha y hora exacta en la que iniciará el evento
     final start = DateTime(
       _selectedDate.year, 
       _selectedDate.month, 
@@ -377,7 +414,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
     );
     final ahora = DateTime.now();
 
-    // 2. Filtramos las opciones: Solo conservamos las que sucederían DESPUÉS de "ahora"
     final opcionesValidas = _reminderOptions.entries.where((option) {
       final notifDate = start.subtract(Duration(minutes: option.value));
       return notifDate.isAfter(ahora);
@@ -399,7 +435,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
               const Text("Agregar recordatorio", style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1E2D3A))),
               const SizedBox(height: 8),
               
-              // 3. Verificamos si quedó alguna opción válida
               if (opcionesValidas.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
@@ -412,7 +447,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   ),
                 )
               else
-                // 4. Dibujamos solo las opciones que pasaron el filtro
                 ...opcionesValidas.map((option) {
                   final alreadyAdded = _selectedReminders.contains(option.value);
                   return ListTile(
@@ -438,7 +472,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   String _formatTimeOfDay(TimeOfDay time) {
     final now = DateTime.now();
     final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-    return DateFormat.jm().format(dt);
+    return DateFormat('h:mm a', 'en_US').format(dt); 
   }
 
   Future<void> _pickDate() async {
@@ -447,8 +481,31 @@ class _AddEventScreenState extends State<AddEventScreen> {
   }
 
   Future<void> _pickTime({required bool isStart}) async {
-    final TimeOfDay? picked = await showTimePicker(context: context, initialTime: isStart ? _startTime : _endTime);
-    if (picked != null) setState(() { if (isStart) { _startTime = picked; if (_isReminderType) _endTime = _startTime; } else { _endTime = picked; } });
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStart ? _startTime : _endTime,
+      initialEntryMode: TimePickerEntryMode.input, 
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: Localizations.override(
+            context: context,
+            locale: const Locale('en', 'US'), 
+            child: child!,
+          ),
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() { 
+        if (isStart) { 
+          _startTime = picked; 
+          if (_isReminderType) _endTime = _startTime; 
+        } else { 
+          _endTime = picked; 
+        } 
+      });
+    }
   }
 
   void _validateAndSave() async {
@@ -468,43 +525,38 @@ class _AddEventScreenState extends State<AddEventScreen> {
         await _authService.createEvent(title: _titleController.text.trim(), description: _descController.text.trim(), startDate: start, endDate: end, isAllDay: _isAllDay, type: _selectedType); 
       }
       
-      // --- LÓGICA DE NOTIFICACIONES DINÁMICAS ---
       for (int mins in _selectedReminders) {
         final notifDate = start.subtract(Duration(minutes: mins));
         
         if (notifDate.isAfter(DateTime.now())) {
-          // 1. Mensaje por defecto
           String cuerpoPersonalizado = 'Tu evento "${_titleController.text.trim()}" está a punto de empezar.';
-          
-          // 2. Formatear la hora para mostrarla en el mensaje
           final horaFormateada = DateFormat('h:mm a', 'es_ES').format(start);
 
-          // 3. Cambiar el texto según el tiempo de anticipación
-          if (mins == 43200) { // 1 mes antes (43200 minutos)
+          if (mins == 43200) { 
             cuerpoPersonalizado = 'Recuerda que el próximo mes tienes el evento "${_titleController.text.trim()}" a las $horaFormateada.';
-          } else if (mins == 20160) { // 2 semanas antes (20160 minutos)
+          } else if (mins == 20160) {
             cuerpoPersonalizado = 'Recuerda que en 2 semanas tienes el evento "${_titleController.text.trim()}" a las $horaFormateada.';
-          } else if (mins == 10080) { // 1 semana antes (10080 minutos)
+          } else if (mins == 10080) { 
             cuerpoPersonalizado = 'Recuerda que la próxima semana tienes el evento "${_titleController.text.trim()}" a las $horaFormateada.';
-          } else if (mins == 1440) { // 1 día antes (1440 minutos)
+          } else if (mins == 1440) { 
             cuerpoPersonalizado = 'Recuerda que el día de mañana tienes el evento "${_titleController.text.trim()}" a las $horaFormateada.';
-          } else if (mins == 120) { // 2 horas antes (120 minutos)
+          } else if (mins == 120) {
             cuerpoPersonalizado = 'Tu evento "${_titleController.text.trim()}" empieza en 2 horas (a las $horaFormateada).';
-          } else if (mins == 60) { // 1 hora antes (60 minutos)
+          } else if (mins == 60) { 
             cuerpoPersonalizado = 'Tu evento "${_titleController.text.trim()}" empieza en una hora (a las $horaFormateada).';
           }
           
-
           await NotificationService.programarNotificacion(
             id: DateTime.now().millisecondsSinceEpoch ~/ 1000 + mins, 
             titulo: 'Recordatorio Kronos', 
-            cuerpo: cuerpoPersonalizado, // <--- Usamos el cuerpo personalizado
+            cuerpo: cuerpoPersonalizado,
             fecha: notifDate
           );
         }
       }
       
-      if (mounted) Navigator.pop(context);
+      if (mounted) _closeScreen();
+      
     } catch (e) { 
       if (mounted) { 
         setState(() => _isLoading = false); 

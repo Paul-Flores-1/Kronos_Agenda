@@ -6,6 +6,7 @@ plugins {
     id("kotlin-android")
     id("com.google.gms.google-services")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.huawei.agconnect")
 }
 
 // --- DIAGNÓSTICO DE ARCHIVO ---
